@@ -1,42 +1,44 @@
 package fr.traceforum.traceforum_app;
 
 import java.io.Serializable;
+import java.util.Date;
 
 public class Transition implements Serializable {
+    private String type;
+    private String date;
+    private String time;
 
-    private int id;
-    private String title;
-    private String comment;
 
     public Transition(){}
 
-    public Transition(int id, String title, String comment) {
-        this.id = id;
-        this.title = title;
-        this.comment = comment;
+    public Transition(String type, String date, String time) {
+        this.type = type;
+        this.date = date;
+        this.time = time;
     }
 
-    public int getId() {
-        return id;
+    public String getTime() {
+        return time;
     }
 
-    public void setId(int id) {
-        this.id = id;
+    public void setTime(String time) {
+        this.time = time;
     }
 
-    public String getTitle() {
-        return title;
+    public String getDate() {
+        return date;
     }
 
-    public void setTitle(String title) {
-        this.title = title;
+    public void setDate(String date) {
+        this.date = date;
     }
 
-    public String getComment() {
-        return comment;
+    public String getType() {
+        return type;
     }
 
-    public void setComment(String comment) {
-        this.comment = comment;
+    public void setType(String type) {
+        this.type = type;
     }
+
 }

@@ -6,15 +6,19 @@ import java.util.ArrayList;
 public class User implements Serializable {
     private int userId;
     private String userName;
-    private ArrayList<Transition> transitions = new ArrayList<Transition>();
+    private ArrayList<Transition> messagesOpened = new ArrayList<Transition>();
+    private ArrayList<Transition> messagesOpenedWithScrollbarDisabled = new ArrayList<Transition>();
+    private ArrayList<Transition> readingEvents = new ArrayList<Transition>();
 
-    public User(){}
-
-    public User(int userId, String userName, ArrayList<Transition> transitions) {
+    public User(int userId, String userName, ArrayList<Transition> messagesOpened, ArrayList<Transition> messagesOpenedWithScrollbarDisabled, ArrayList<Transition> readingEvents) {
         this.userId = userId;
         this.userName = userName;
-        this.transitions = transitions;
+        this.messagesOpened = messagesOpened;
+        this.messagesOpenedWithScrollbarDisabled = messagesOpenedWithScrollbarDisabled;
+        this.readingEvents = readingEvents;
     }
+
+    public User(){}
 
     public int getUserId() {
         return userId;
@@ -32,11 +36,27 @@ public class User implements Serializable {
         this.userName = userName;
     }
 
-    public ArrayList<Transition> getTransitions() {
-        return transitions;
+    public ArrayList<Transition> getMessagesOpened() {
+        return messagesOpened;
     }
 
-    public void setTransitions(ArrayList<Transition> transitions) {
-        this.transitions = transitions;
+    public void setMessagesOpened(ArrayList<Transition> messagesOpened) {
+        this.messagesOpened = messagesOpened;
+    }
+
+    public ArrayList<Transition> getMessagesOpenedWithScrollbarDisabled() {
+        return messagesOpenedWithScrollbarDisabled;
+    }
+
+    public void setMessagesOpenedWithScrollbarDisabled(ArrayList<Transition> messagesOpenedWithScrollbarDisabled) {
+        this.messagesOpenedWithScrollbarDisabled = messagesOpenedWithScrollbarDisabled;
+    }
+
+    public ArrayList<Transition> getReadingEvents() {
+        return readingEvents;
+    }
+
+    public void setReadingEvents(ArrayList<Transition> readingEvents) {
+        this.readingEvents = readingEvents;
     }
 }

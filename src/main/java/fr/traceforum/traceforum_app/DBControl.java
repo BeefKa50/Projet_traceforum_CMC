@@ -33,9 +33,7 @@ public class DBControl {
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
             con = DriverManager.getConnection(url,user,password);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        } catch (ClassNotFoundException e) {
+        } catch (SQLException | ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
 
@@ -48,6 +46,7 @@ public class DBControl {
         Statement stmt= null;
         ResultSet rs = null;
         try {
+            assert con != null;
             stmt = con.createStatement();
             rs = stmt.executeQuery("select distinct Utilisateur from transition ");
         } catch (SQLException e) {
@@ -57,76 +56,95 @@ public class DBControl {
         return rs;
     }
 
+    private int addResultSetToArrayList(ResultSet rs, ArrayList<Transition> al,String type){
+        int count = 0;
+        con = initializeConnexion();
+        while(true){
+            try {
+                if (!rs.next()) break;
+
+                if(type == "Finish reading a message"){
+                    Statement stmt=con.createStatement();
+
+                    ResultSet rsf =stmt.executeQuery("SELECT RefTran FROM transition WHERE Titre = '" +
+                            "Bouger la scrollbar en bas - afficher la fin du message" + "' AND Date = '" +
+                            rs.getString(3) + "' AND Heure = '" + rs.getString(4) + "'");
+
+                    rsf.next();
+
+                    rsf = stmt.executeQuery("SELECT Date,Heure FROM transition WHERE RefTran = " + rsf.getInt(1) +
+                             " ORDER BY Date,Heure ");
+                    rsf.next();
+
+                    al.add(new Transition("Start reading a message",rsf.getString(1),rsf.getString(2)));
+                }
+
+                al.add(new Transition(type,rs.getString(3),
+                        rs.getString(4)));
+                count++;
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        try {
+            con.close();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return count;
+    }
+
+
+
     private User getUserData(int id, String username){
 
-        ArrayList<String> dates = new ArrayList<String>();
         ArrayList<Integer> msgs = new ArrayList<Integer>();
-        ArrayList<Transition> transitions = new ArrayList<Transition>();
+        ArrayList<Transition> displayMsg = new ArrayList<Transition>();
+        ArrayList<Transition> displayMsgScrollbarDisabled = new ArrayList<Transition>();
+        ArrayList<Transition> readingEvents = new ArrayList<Transition>();
+
 
         try{
+            int i = 0;
+
+            int completely = 0;
+            int partially = 0;
+
             con = initializeConnexion();
 
-            // Query the database in order to get the transitions corresponding to the given user
             Statement stmt=con.createStatement();
-            ResultSet rs=stmt.executeQuery("select * from transition where Utilisateur = '" + username + "'");
+            ResultSet rs1 = stmt.executeQuery("SELECT DISTINCT Titre,Commentaire,Date,Heure FROM `transition` WHERE "
+                    + "Utilisateur = '" + username + "' AND Titre = 'Afficher le contenu d''un message' AND " +
+                    "Commentaire IS NULL ORDER BY Date,Heure;");
 
-            // Data exploration in the transition table
-            while(rs.next()){
+            partially += addResultSetToArrayList(rs1,displayMsg,"Open a message");
 
-                // Selection in order to keep only the interesting transitions according to the indicators we want
-                // to provide
-                if(rs.getString(3).equals("Bouger la scrollbar en bas - afficher la fin du message")
-                        || rs.getString(3).equals("Afficher le contenu d'un message")
-                        || rs.getString(3).equals("Poster un nouveau message")){
+            ResultSet rs2 = stmt.executeQuery("SELECT DISTINCT Titre,Commentaire,Date,Heure FROM `transition` WHERE "
+                    + "Utilisateur = '" + username + "' AND Titre = 'Afficher le contenu d''un message' AND " +
+                    "Commentaire = 'Scrollbar inactive' ORDER BY Date,Heure;");
 
-                    // Deletion of the duplicates (some transitions were recorded two times) by checking that
-                    // each complete date (including the precise time) is different
-                    if( dates.indexOf(rs.getString(5) + rs.getString(6)) == -1 ){
+            completely += addResultSetToArrayList(rs2,displayMsgScrollbarDisabled,"Open a message - " +
+                    " the scrollbar is disabled");
 
-                        /*
-                        Clean the incoming data to keep only one transition for a single message.
-                                This way, we will count a message saw by a user only one time, even if he read it
-                        multiple times.
-                        */
+            ResultSet rs3 = stmt.executeQuery("SELECT DISTINCT Titre,Commentaire,Date,Heure FROM `transition` WHERE "
+                    + "Utilisateur = '" + username + "' AND Titre = " +
+                    "'Bouger la scrollbar en bas - afficher la fin du message' ORDER BY Date,Heure");
 
+            completely += addResultSetToArrayList(rs3,readingEvents,"Finish reading a message");
 
-                        // Split the Attributes column in order to distinguish the IDs
-                        String[] attributes =  rs.getString(4).split(",");
+            ResultSet rs4 = stmt.executeQuery("SELECT DISTINCT Titre,Commentaire,Date,Heure FROM `transition` WHERE "
+                    + "Utilisateur = '" + username + "' AND Titre = " +
+                    "'Poster un nouveau message' ORDER BY Date,Heure");
 
-                        for(int i = 0 ; i< attributes.length ; i++) {
+            addResultSetToArrayList(rs4,readingEvents,"Post a new message");
 
-                            // Get for each ID its name and value
-                            String[] vals = attributes[i].split("=");
+            System.out.println("User : " + username);
+            System.out.println("Partially read : "+partially);
+            System.out.println("Completely read : "+completely);
 
-                            // Keep only the IDMsg IDs and check that this message hasn't been taken in account yet
-                            if (vals[0].equals("IDMsg") && msgs.indexOf(vals[1]) == -1) {
+        }catch(Exception e){ e.printStackTrace();}
 
-                                // Store the collected data in a Transition object
-                                Transition transition = new Transition(rs.getInt(1),
-                                        rs.getString(3),
-                                        rs.getString(9));
-
-                                // Add it to the ArrayList
-                                transitions.add(transition);
-
-                                // Add the IDMsg to the corresponding ArrayList to indicate that this message
-                                // has been taken into account
-                                msgs.add(Integer.parseInt(vals[1]));
-                            }
-                        }
-                    }
-
-                    // Add the date to the corresponding ArrayList to indicate that the record related to this precise
-                    // date was taken into account
-                    dates.add(rs.getString(5) + rs.getString(6));
-                }
-            }
-            con.close();
-
-        }catch(Exception e){ System.out.println(e);}
-
-        User user = new User(id,username,transitions);
-        return user;
+        return new User(id,username,displayMsg,displayMsgScrollbarDisabled,readingEvents);
     }
 
     public void generateXML(){
@@ -152,77 +170,6 @@ public class DBControl {
             throw new RuntimeException(e);
         }
     }
-
-    // Old version with a previous data model
-    /*
-    public void generateXML(){
-        try{
-            con = initializeConnexion();
-
-            // Query the database in order to get the whole transition table
-            Statement stmt=con.createStatement();
-            ResultSet rs=stmt.executeQuery("select * from transition");
-
-            // Data exploration in the transition table
-            while(rs.next()){
-
-                // Selection in order to keep only the interesting transitions according to the indicators we want
-                // to provide
-                if(rs.getString(3).equals("Bouger la scrollbar en bas - afficher la fin du message")
-                        || rs.getString(3).equals("Afficher le contenu d'un message")
-                        || rs.getString(3).equals("Poster un nouveau message")){
-
-                    // Deletion of the duplicates (some transitions were recorded two times) by checking that
-                    // each complete date (including the precise time) is different
-                    if( dates.indexOf(rs.getString(5) + rs.getString(6)) == -1 ){
-
-
-                        Clean the incoming data to keep only one transition for a single message.
-                        This way, we will count a message saw by a user only one time, even if he read it
-                        multiple times.
-
-
-                        // Split the Attributes column in order to distinguish the IDs
-                        String[] attributes =  rs.getString(4).split(",");
-
-                        for(int i = 0 ; i< attributes.length ; i++) {
-
-                            // Get for each ID its name and value
-                            String[] vals = attributes[i].split("=");
-
-                            // Keep only the IDMsg IDs and check that this message hasn't been taken in account yet
-                            if (vals[0].equals("IDMsg") && msgs.indexOf(vals[1]) == -1) {
-
-                                // Store the collected data in a Transition object
-                                Transition transition = new Transition(rs.getInt(1),
-                                        rs.getString(2), rs.getString(3),
-                                        rs.getString(9));
-
-                                // Add it to the ArrayList
-                                transitions.add(transition);
-
-                                // Add the IDMsg to the corresponding ArrayList to indicate that this message
-                                // has been taken into account
-                                msgs.add(Integer.parseInt(vals[1]));
-                            }
-                        }
-                    }
-
-                    // Add the date to the corresponding ArrayList to indicate that the record related to this precise
-                    // date was taken into account
-                    dates.add(rs.getString(5) + rs.getString(6));
-                }
-            }
-
-            // Output : generate an XML file with the clean and selected data
-            ObjectMapper objectMapper = new ObjectMapper();
-            objectMapper.writeValue(new File("test_output.json"), transitions);
-
-
-            con.close();
-        }catch(Exception e){ System.out.println(e);}
-    }
-    */
 
     public static void main(String[] args){
         DBControl dbControl = new DBControl("jdbc:mysql://localhost:3306/traceforum","root","");
