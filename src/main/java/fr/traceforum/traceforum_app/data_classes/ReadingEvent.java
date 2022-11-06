@@ -1,4 +1,4 @@
-package fr.traceforum.traceforum_app.model;
+package fr.traceforum.traceforum_app.data_classes;
 
 import java.io.Serializable;
 

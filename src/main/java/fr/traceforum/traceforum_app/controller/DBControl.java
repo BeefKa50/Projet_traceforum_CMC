@@ -1,9 +1,9 @@
 package fr.traceforum.traceforum_app.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import fr.traceforum.traceforum_app.model.ReadingEvent;
-import fr.traceforum.traceforum_app.model.Transition;
-import fr.traceforum.traceforum_app.model.User;
+import fr.traceforum.traceforum_app.data_classes.ReadingEvent;
+import fr.traceforum.traceforum_app.data_classes.Transition;
+import fr.traceforum.traceforum_app.data_classes.User;
 
 import java.io.File;
 import java.io.IOException;
@@ -163,7 +163,7 @@ public class DBControl {
      * @param username the username
      * @return a User object containing all the data needed for a single user in order to compute the indicators.
      */
-    private User getUserData(int id, String username){
+    public User getUserData(int id, String username){
 
         // ArrayList objects that will contain the useful data about this user
         ArrayList<Transition> displayMsg = new ArrayList<Transition>();
@@ -177,6 +177,11 @@ public class DBControl {
             con = initializeConnexion();
 
             Statement stmt=con.createStatement();
+
+            ResultSet rs0 = stmt.executeQuery("SELECT Utilisateur FROM transition WHERE Utilisateur = '" +
+                    username + "';");
+            rs0.next();
+            rs0.getString(1);
 
             // Get the transitions corresponding to the display of a message
             ResultSet rs1 = stmt.executeQuery("SELECT DISTINCT Titre,Commentaire,Date,Heure FROM `transition` WHERE "
@@ -212,7 +217,10 @@ public class DBControl {
             // Add this data to the postMsg ArrayList
             addResultSetToArrayList(rs4,postMsg,"Post a new message");
 
-        }catch(Exception e){ e.printStackTrace();}
+        }catch(Exception e){
+            e.printStackTrace();
+            return null;
+        }
 
         return new User(id,username,displayMsg,displayMsgScrollbarDisabled,readingEvents,postMsg);
     }
@@ -220,8 +228,10 @@ public class DBControl {
     /**
      * This method generates a JSON document containing all the data needed to calculate the indicators.
      * This document may later be parsed to compute them.
+     *
+     * @return the ArrayList with all the data needed to calculate the indicators
      */
-    public void generateJSON(){
+    public ArrayList<User> generateJSON(){
 
         // Get the complete list of users as a ResultSet
         ResultSet rs = getUsers();
@@ -255,6 +265,8 @@ public class DBControl {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+
+        return users;
     }
 
     public static void main(String[] args){
