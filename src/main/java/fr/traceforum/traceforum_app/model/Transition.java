@@ -1,4 +1,4 @@
-package fr.traceforum.traceforum_app;
+package fr.traceforum.traceforum_app.model;
 
 import java.io.Serializable;
 import java.util.Date;
