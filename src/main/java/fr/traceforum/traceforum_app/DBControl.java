@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.List;
 
 public class DBControl {
 
@@ -56,9 +57,10 @@ public class DBControl {
         return rs;
     }
 
-    private int addResultSetToArrayList(ResultSet rs, ArrayList<Transition> al,String type){
+    private int addResultSetToArrayList(ResultSet rs, ArrayList al, String type){
         int count = 0;
         con = initializeConnexion();
+
         while(true){
             try {
                 if (!rs.next()) break;
@@ -76,11 +78,17 @@ public class DBControl {
                              " ORDER BY Date,Heure ");
                     rsf.next();
 
-                    al.add(new Transition("Start reading a message",rsf.getString(1),rsf.getString(2)));
-                }
+                    Transition start = new Transition("Start reading a message",rsf.getString(1),
+                            rsf.getString(2));
+                    Transition end = new Transition(type,rs.getString(3),
+                            rs.getString(4));
 
-                al.add(new Transition(type,rs.getString(3),
-                        rs.getString(4)));
+                    al.add(new ReadingEvent(start,end));
+                }
+                else {
+                    al.add(new Transition(type,rs.getString(3),
+                            rs.getString(4)));
+                }
                 count++;
             } catch (SQLException e) {
                 throw new RuntimeException(e);
@@ -101,7 +109,9 @@ public class DBControl {
         ArrayList<Integer> msgs = new ArrayList<Integer>();
         ArrayList<Transition> displayMsg = new ArrayList<Transition>();
         ArrayList<Transition> displayMsgScrollbarDisabled = new ArrayList<Transition>();
-        ArrayList<Transition> readingEvents = new ArrayList<Transition>();
+        ArrayList<ReadingEvent> readingEvents = new ArrayList<ReadingEvent>();
+        ArrayList<Transition> postMsg = new ArrayList<Transition>();
+
 
 
         try{
@@ -136,7 +146,7 @@ public class DBControl {
                     + "Utilisateur = '" + username + "' AND Titre = " +
                     "'Poster un nouveau message' ORDER BY Date,Heure");
 
-            addResultSetToArrayList(rs4,readingEvents,"Post a new message");
+            addResultSetToArrayList(rs4,postMsg,"Post a new message");
 
             System.out.println("User : " + username);
             System.out.println("Partially read : "+partially);
@@ -144,7 +154,7 @@ public class DBControl {
 
         }catch(Exception e){ e.printStackTrace();}
 
-        return new User(id,username,displayMsg,displayMsgScrollbarDisabled,readingEvents);
+        return new User(id,username,displayMsg,displayMsgScrollbarDisabled,readingEvents,postMsg);
     }
 
     public void generateXML(){

@@ -8,14 +8,19 @@ public class User implements Serializable {
     private String userName;
     private ArrayList<Transition> messagesOpened = new ArrayList<Transition>();
     private ArrayList<Transition> messagesOpenedWithScrollbarDisabled = new ArrayList<Transition>();
-    private ArrayList<Transition> readingEvents = new ArrayList<Transition>();
+    private ArrayList<ReadingEvent> readingEvents = new ArrayList<ReadingEvent>();
 
-    public User(int userId, String userName, ArrayList<Transition> messagesOpened, ArrayList<Transition> messagesOpenedWithScrollbarDisabled, ArrayList<Transition> readingEvents) {
+    private ArrayList<Transition> postMsg = new ArrayList<Transition>();
+
+    public User(int userId, String userName, ArrayList<Transition> messagesOpened,
+                ArrayList<Transition> messagesOpenedWithScrollbarDisabled, ArrayList<ReadingEvent> readingEvents,
+                ArrayList<Transition> postMsg) {
         this.userId = userId;
         this.userName = userName;
         this.messagesOpened = messagesOpened;
         this.messagesOpenedWithScrollbarDisabled = messagesOpenedWithScrollbarDisabled;
         this.readingEvents = readingEvents;
+        this.postMsg = postMsg;
     }
 
     public User(){}
@@ -52,11 +57,19 @@ public class User implements Serializable {
         this.messagesOpenedWithScrollbarDisabled = messagesOpenedWithScrollbarDisabled;
     }
 
-    public ArrayList<Transition> getReadingEvents() {
+    public ArrayList<ReadingEvent> getReadingEvents() {
         return readingEvents;
     }
 
-    public void setReadingEvents(ArrayList<Transition> readingEvents) {
+    public void setReadingEvents(ArrayList<ReadingEvent> readingEvents) {
         this.readingEvents = readingEvents;
+    }
+
+    public ArrayList<Transition> getPostMsg() {
+        return postMsg;
+    }
+
+    public void setPostMsg(ArrayList<Transition> postMsg) {
+        this.postMsg = postMsg;
     }
 }
