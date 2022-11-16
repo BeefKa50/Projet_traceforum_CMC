@@ -17,6 +17,9 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
+/**
+ * This class aims at computing several indicators by parsing a JSON file.
+ */
 public class IndicatorCalc {
 
     public static final int AVERAGE = 0;
@@ -31,7 +34,7 @@ public class IndicatorCalc {
     /**
      * This method allows the user to load a JSON document and store its content in a JSONArray object.
      * @param filename
-     * @throws ParseException exception thrown when a problem occurs while parsin the JSON document
+     * @throws ParseException exception thrown when a problem occurs while parsing the JSON document
      */
     public void parse(String filename) throws ParseException {
         // Initialize a JSON Parser
@@ -145,8 +148,7 @@ public class IndicatorCalc {
                     JSONArray postedMsgs = (JSONArray) parent.get("postMsg");
 
                     // Calculate the number of messages posted by the given user
-                    postMsgNb = postedMsgs.size();
-                }
+                    postMsgNb = postedMsgs.size();             }
             }
             if(!userFound) throw new UserNotFoundException(username);
         }
