@@ -26,7 +26,7 @@ public class IndicatorCalc {
     public static final int GLOBAL = 1;
 
     // HashMap that will contain the computed indicators
-    public HashMap<String,HashMap<String,Double>> indicators = null;
+    public HashMap<String,HashMap<String,Object>> indicators = null;
 
     // JSON Data loaded from file
     private JSONArray json = null;
@@ -104,7 +104,7 @@ public class IndicatorCalc {
         }
 
         // Generate a HashMap to store this user's data if it does not already exist
-        HashMap<String,Double> resMap = new HashMap<>();
+        HashMap<String,Object> resMap = new HashMap<>();
         indicators.putIfAbsent(username,resMap);
 
         // Store the computed indicators
@@ -157,7 +157,7 @@ public class IndicatorCalc {
         }
 
         // Generate a HashMap to store this user's data if it does not already exist and store the indicators
-        HashMap<String,Double> resMap = new HashMap<>();
+        HashMap<String,Object> resMap = new HashMap<>();
         indicators.putIfAbsent(username,resMap);
         indicators.get(username).put("postedMsgNumber",(double) postMsgNb);
 
@@ -173,10 +173,10 @@ public class IndicatorCalc {
      * @throws UserNotFoundException exception thrown when the given user does not exist
      * @throws DataNotYetParsedException exception thrown when no JSON data has been already parsed
      */
-    public double computeReadingTime(String username, int type) throws UserNotFoundException, DataNotYetParsedException {
-        double res = 0.0;
+    public HashMap<Integer,Double> computeReadingTime(String username, int type) throws UserNotFoundException, DataNotYetParsedException {
         boolean userFound = false;
-        int eventCount = 0;
+
+        HashMap<Integer,List<Double>> timePerForum = new HashMap<>();
 
         // Check that the JSON data has been loaded
         if(json != null){
@@ -198,14 +198,13 @@ public class IndicatorCalc {
                     // Iterate to get the start and end dates
                     for(Object readingEvent : readingEvents){
 
-                        // Count the number of readingEvents to compute the average reading time
-                        eventCount++;
-
                         JSONObject event = (JSONObject) readingEvent;
 
                         // Get the start and end reading events
                         JSONObject start =  (JSONObject) event.get("startReading");
                         JSONObject end =  (JSONObject) event.get("endReading");
+                        int numForum = Integer.parseInt(event.get("forumNumber").toString());
+
                         Date dI = null;
                         Date dF = null;
 
@@ -225,7 +224,10 @@ public class IndicatorCalc {
                         // Calculate the precise reading time
                         long timeDiffInSec = (dF.getTime() - dI.getTime()) / 1000;
 
-                        res += timeDiffInSec;
+                        timePerForum.putIfAbsent(numForum,new ArrayList<Double>());
+                        List<Double> times = timePerForum.get(numForum);
+                        times.add((double) timeDiffInSec);
+                        timePerForum.put(numForum,times);
                     }
                 }
             }
@@ -237,20 +239,40 @@ public class IndicatorCalc {
         }
 
         // Generate a HashMap to store this user's data if it does not already exist
-        HashMap<String,Double> resMap = new HashMap<>();
+        HashMap<String,Object> resMap = new HashMap<>();
         indicators.putIfAbsent(username,resMap);
 
-        // Compute the average or global reading time according to the specified type
-        if(type == AVERAGE){
-            if(eventCount != 0) res = res/eventCount;
-            else res = 0;
-            indicators.get(username).put("averageReadingTime",res);
-        }
-        else if(type == GLOBAL){
-            indicators.get(username).put("globalReadingTime",res);
+        HashMap<Integer,Double> finalRes = new HashMap<>();
+
+        // Compute the global reading time per forum
+        for (int key : timePerForum.keySet()) {
+            List<Double> times = timePerForum.get(key);
+            int eventCount = 0;
+            double res = 0;
+            for (Double time : times){
+                eventCount++;
+                res += time;
+            }
+            if(type == AVERAGE){
+                if(eventCount != 0){
+                    finalRes.put(key,res/eventCount);
+                    //indicators.get(username).put("averageReadingTimeForum" + key,(double) res/eventCount);
+                }
+                else{
+                    finalRes.put(key,0.0);
+                    //indicators.get(username).put("averageReadingTimeForum" + key,0.0);
+                }
+            }
+            else if(type == GLOBAL){
+                finalRes.put(key,res);
+                //indicators.get(username).put("globalReadingTimeForum" + key,(double) res);
+            }
         }
 
-        return res;
+        if(type == GLOBAL) indicators.get(username).put("globalReadingTimePerForum", finalRes);
+        else indicators.get(username).put("averageReadingTimePerForum", finalRes);
+
+        return finalRes;
     }
 
     /**

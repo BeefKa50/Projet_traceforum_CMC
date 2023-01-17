@@ -1,25 +1,18 @@
 package fr.traceforum.traceforum_app.controller;
 
+import fr.traceforum.traceforum_app.data_classes.Indicators;
 import fr.traceforum.traceforum_app.data_classes.User;
 import fr.traceforum.traceforum_app.exceptions.DataNotYetParsedException;
 import fr.traceforum.traceforum_app.exceptions.UserNotFoundException;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 @RestController
 public class IndicatorsRESTController {

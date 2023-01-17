@@ -1,4 +1,4 @@
-package fr.traceforum.traceforum_app.controller;
+package fr.traceforum.traceforum_app.data_classes;
 
 import java.util.List;
 

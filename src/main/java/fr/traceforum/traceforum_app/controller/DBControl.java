@@ -9,6 +9,8 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * This class is used to perform a connexion to an external database containing some forum logs.
@@ -124,7 +126,7 @@ public class DBControl {
                     // Get the Date and Time corresponding to the first event chronologically with the same RefTran
                     // as the end transition.
                     // This way we get the data of the start transition
-                    rsf = stmt.executeQuery("SELECT Date,Heure FROM transition WHERE RefTran = " + rsf.getInt(1) +
+                    rsf = stmt.executeQuery("SELECT Date,Heure,Attribut FROM transition WHERE RefTran = " + rsf.getInt(1) +
                              " ORDER BY Date,Heure ");
                     rsf.next();
 
@@ -134,8 +136,16 @@ public class DBControl {
                     Transition end = new Transition(type,rs.getString(3),
                             rs.getString(4));
 
+                    Pattern pattern = Pattern.compile( "IDForum=([0-9]+)");
+
+                    Matcher matcher = pattern.matcher(rsf.getString(3));
+                    matcher.find();
+                    String idForum = matcher.group(1);
+                    System.out.println(Integer.parseInt(idForum));
+
+
                     // Fuze them into a ReadingEvent object and add it to the ArrayList
-                    al.add(new ReadingEvent(start,end));
+                    al.add(new ReadingEvent(start,end,Integer.parseInt(idForum)));
                 }
 
                 // DEFAULT CASE
