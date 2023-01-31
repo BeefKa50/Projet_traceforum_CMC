@@ -1,15 +1,13 @@
-function createBarChart(labels,data){
+function createBarChart(labels,data,labelName){
     const div = document.createElement('div');
     const ctx = document.createElement("canvas")
-    ctx.setAttribute("width","100")
-    ctx.setAttribute("height","40")
 
     new Chart(ctx, {
         type: 'bar',
         data: {
             labels: labels,
             datasets: [{
-                label: 'Average reading time',
+                label: labelName,
                 data: data,
                 borderWidth: 1
             }]
@@ -29,19 +27,17 @@ function createBarChart(labels,data){
     return div
 }
 
-function createPieChart(labels,data){
+function createPieChart(labels,data,labelName){
 
     const div = document.createElement('div');
     const ctx = document.createElement("canvas")
-    ctx.setAttribute("width","100")
-    ctx.setAttribute("height","40")
 
     new Chart(ctx, {
         type: 'pie',
         data: {
           labels: labels,
           datasets: [{
-            label: "Messages read",
+            label: labelName,
             backgroundColor: ["#3e95cd", "#8e5ea2"],
             data: data
           }]
@@ -54,16 +50,14 @@ function createPieChart(labels,data){
         }
     });
 
-    ctx.setAttribute("width","100")
-    ctx.setAttribute("height","40")
     div.appendChild(ctx)
     return div
 }
 
-window.addEventListener("DOMContentLoaded", (event) => {
+function loadChartUser(user){
     firstUser = "tdelille"
     const xhr = new XMLHttpRequest();
-    xhr.open("POST", "/indicators/" + firstUser, true);
+    xhr.open("POST", "/indicators/" + user, true);
     xhr.getResponseHeader("Content-type", "application/json");
     xhr.setRequestHeader('Content-type', 'application/json');
 
@@ -72,27 +66,63 @@ window.addEventListener("DOMContentLoaded", (event) => {
 
         const obj = JSON.parse(response.toString());
 
-        var averageReadingTime = obj[firstUser]["averageReadingTimePerForum"]
-        var globalReadingTime = obj[firstUser]["globalReadingTimePerForum"]
-        var msgCompletelyRead = obj[firstUser]["messagesPartiallyRead"]
-        var msgPartiallyRead = obj[firstUser]["messagesCompletelyRead"]
+        var averageReadingTime = obj[user]["averageReadingTimePerForum"]
+        var globalReadingTime = obj[user]["globalReadingTimePerForum"]
+        var msgCompletelyRead = obj[user]["messagesPartiallyRead"]
+        var msgPartiallyRead = obj[user]["messagesCompletelyRead"]
+        var nbMsgPosted = obj[user]["postedMsgNumber"]
 
 
-        divAverage = createBarChart(Object.keys(averageReadingTime),Object.values(averageReadingTime))
+        divAverage = createBarChart(Object.keys(averageReadingTime),Object.values(averageReadingTime),
+        "Average reading time")
+        document.getElementById("divAverage").innerHTML = ""
         document.getElementById("divAverage").appendChild(divAverage)
 
-        divGlobal = createBarChart(Object.keys(globalReadingTime),Object.values(globalReadingTime))
+        divGlobal = createBarChart(Object.keys(globalReadingTime),Object.values(globalReadingTime),
+        "Global reading time")
+        document.getElementById("divGlobal").innerHTML = ""
         document.getElementById("divGlobal").appendChild(divGlobal)
 
         data = [msgCompletelyRead,msgPartiallyRead]
         labels = ["Messages completely read", "Messages partially read"]
-        divMsgRead = createPieChart(labels,data)
+        divMsgRead = createPieChart(labels,data,"Messages read")
+        document.getElementById("divMessages").innerHTML = ""
         document.getElementById("divMessages").appendChild(divMsgRead)
+
+        document.getElementById("nbMsgPosted").innerHTML = Math.floor(nbMsgPosted)
     }
 
     lst = ["averageReadingTime","globalReadingTime","postStats","readingCompletionStats"]
     const parameters = JSON.stringify({"indicators": lst});
     xhr.send(parameters);
+}
+
+window.addEventListener("DOMContentLoaded", (event) => {
+    const http = new XMLHttpRequest();
+    http.open("GET", "/users", true);
+    http.getResponseHeader("Content-type", "application/json");
+
+    http.onload = function() {
+        const response = this.responseText
+
+        const users = JSON.parse(response.toString());
+        const selectUser = document.getElementById("selectUser")
+        for (var i = 0; i < users.length; i++) {
+            var option = document.createElement("option")
+            if(i == 0){
+                option.setAttribute("selected","selected")
+            }
+            option.innerHTML = users[i]
+            selectUser.appendChild(option)
+        }
+        loadChartUser(users[0])
+    }
+
+    http.send();
+});
+
+document.getElementById("selectUser").addEventListener('change', (event) => {
+    loadChartUser(event.target.value)
 });
 
 
